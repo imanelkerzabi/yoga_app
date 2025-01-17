@@ -1,0 +1,240 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
+
+class ActiveSessionScreen extends StatefulWidget {
+  const ActiveSessionScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ActiveSessionScreen> createState() => _ActiveSessionScreenState();
+}
+
+class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
+  late VideoPlayerController _videoController;
+  late Timer _timer;
+  int _secondsElapsed = 0;
+  bool _isPaused = false;
+  final int _totalDuration = 13 * 60; // Durée totale de la session : 13 minutes
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialiser le contrôleur vidéo
+    _videoController = VideoPlayerController.asset('assets/videos/yoga_session.mp4')
+      ..initialize().then((_) {
+        setState(() {});
+      });
+
+    // Lecture automatique en boucle
+    _videoController.setLooping(true);
+    _videoController.play();
+
+    // Démarrer le chronomètre
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isPaused && _secondsElapsed < _totalDuration) {
+        setState(() {
+          _secondsElapsed++;
+        });
+      }
+      if (_secondsElapsed >= _totalDuration) {
+        _endSession(autoEnd: true);
+      }
+    });
+  }
+
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
+      if (_isPaused) {
+        _videoController.pause();
+      } else {
+        _videoController.play();
+      }
+    });
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$secs";
+  }
+
+  int _calculateCaloriesBurned() {
+    const caloriesPerMinute = 8; // Exemple : intensité modérée
+    return (_secondsElapsed ~/ 60) * caloriesPerMinute;
+  }
+
+  String _getMotivationalMessage() {
+    if (_secondsElapsed < _totalDuration ~/ 3) {
+      return "Great start! Keep going!";
+    } else if (_secondsElapsed < 2 * _totalDuration ~/ 3) {
+      return "You're halfway there!";
+    } else if (_secondsElapsed < _totalDuration) {
+      return "Almost done! Push through!";
+    } else {
+      return "Session complete!";
+    }
+  }
+
+  Future<void> _endSession({bool autoEnd = false}) async {
+    if (!autoEnd) {
+      final shouldEnd = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('End Session'),
+            content: const Text('Are you sure you want to end this session?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                ),
+                child: const Text('End'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldEnd != true) return;
+    }
+
+    Navigator.pop(context, {
+      'duration': _secondsElapsed,
+      'calories': _calculateCaloriesBurned(),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE6E6FA), // Lavande claire
+      appBar: AppBar(
+        title: const Text('Yoga Session'),
+        backgroundColor: const Color(0xFF6C63FF), // Violet pastel
+        elevation: 0,
+      ),
+      body: Center(
+        child: SingleChildScrollView( // Évite le débordement sur petits écrans
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Session in Progress',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A4A8F),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (_videoController.value.isInitialized)
+                AspectRatio(
+                  aspectRatio: _videoController.value.aspectRatio,
+                  child: VideoPlayer(_videoController),
+                )
+              else
+                const CircularProgressIndicator(
+                  color: Color(0xFF6C63FF),
+                ),
+              const SizedBox(height: 20),
+              Text(
+                _formatTime(_secondsElapsed),
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6C63FF),
+                ),
+              ),
+              const SizedBox(height: 20),
+              LinearProgressIndicator(
+                value: _secondsElapsed / _totalDuration,
+                backgroundColor: Colors.grey[300],
+                color: const Color(0xFF6C63FF),
+                minHeight: 10,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _getMotivationalMessage(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A4A8F),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "${_calculateCaloriesBurned()} kcal burned",
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Color(0xFF4A4A8F),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _togglePause,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      _isPaused ? 'Resume' : 'Pause',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _endSession,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'End Session',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
