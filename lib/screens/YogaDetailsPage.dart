@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:yoga_app/screens/ActiveSessionScreen';
+import 'package:yoga_app/screens/ActiveSessionScreen.dart';
+
 
 class YogaDetailsPage extends StatefulWidget {
   const YogaDetailsPage({super.key});
@@ -62,7 +63,7 @@ class _YogaDetailsPageState extends State<YogaDetailsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Inner Healing Therapy",
+                      "5 Min Morning Yoga to FEEL AMAZING!",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
