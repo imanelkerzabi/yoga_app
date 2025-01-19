@@ -30,4 +30,11 @@ flutter:
   assets:
     - assets/images/page1.jpg
     - assets/images/page4.jpg
+    - assets/images/welcome.jpg
+    - assets/images/yoga.jpg
+    - assets/images/yoga1.jpg
+    - assets/images/yoga2.jpg
+    - assets/images/image1.jpg
+    - assets/images/yoga_pose.png
+    - assets/videos/yoga_session.mp4
     
